@@ -108,9 +108,9 @@ register({
       for (const f of t.lampiran || []) delFile(f);
       state.tugas = state.tugas.filter((x) => x !== t); save(); toast('Tugas dihapus'); go('#/tugas');
     },
-    stepDel: (el) => { const t = find(el.dataset.t); t.langkah = t.langkah.filter((x) => x.id !== el.dataset.id); save(); rerender(); },
+    stepDel: (el) => { const t = find(el.dataset.t); const i = t.langkah.findIndex((x) => x.id === el.dataset.id); if (i < 0) return; const [x] = t.langkah.splice(i, 1); save(); rerender(); toast('Langkah dihapus', { label: 'Urungkan', run: () => { t.langkah.splice(Math.min(i, t.langkah.length), 0, x); save(); rerender(); } }); },
     memToggle: (el) => { const a = find(el.dataset.t).anggota.find((x) => x.id === el.dataset.id); a.done = !a.done; save(); rerender(); },
-    memDel: (el) => { const t = find(el.dataset.t); t.anggota = t.anggota.filter((x) => x.id !== el.dataset.id); save(); rerender(); },
+    memDel: (el) => { const t = find(el.dataset.t); const i = t.anggota.findIndex((x) => x.id === el.dataset.id); if (i < 0) return; const [x] = t.anggota.splice(i, 1); save(); rerender(); toast('Anggota dihapus', { label: 'Urungkan', run: () => { t.anggota.splice(Math.min(i, t.anggota.length), 0, x); save(); rerender(); } }); },
     photoAdd: async (el) => { const t = find(el.dataset.t); const id = await addPhoto(); if (!id) return; t.lampiran = [...(t.lampiran || []), id]; save(); rerender(); },
     photoDel: async (el) => { const t = find(el.dataset.t); if (!(await confirmBox('Hapus foto ini?', { ok: 'Hapus', danger: true, title: 'Hapus foto?' }))) return; t.lampiran = t.lampiran.filter((f) => f !== el.dataset.file); delFile(el.dataset.file); save(); rerender(); },
     photoView: async (el) => { const d = await getFile(el.dataset.file); if (!d) return; openSheet({ title: 'Foto', body: `<img src="${d}" alt="Foto lampiran" class="photo-full">` }); },

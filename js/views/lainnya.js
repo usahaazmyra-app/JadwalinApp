@@ -256,7 +256,10 @@ register({
     }),
     progNav: (el) => { progOff = Math.min(0, progOff + Number(el.dataset.n)); rerender(); },
     fkToggle: () => { if (F.running) { F.running = false; F.remain = (F.endAt - Date.now()) / 1000; setFokusRunning(false); } else { F.running = true; F.endAt = Date.now() + F.remain * 1000; setFokusRunning(F.mode === 'fokus'); } rerender(); },
-    fkReset: () => { F.running = false; setFokusRunning(false); F.mode = 'fokus'; F.total = F.remain = state.settings.fokusMenit * 60; rerender(); },
+    fkReset: async () => {
+      const left = F.running ? (F.endAt - Date.now()) / 1000 : F.remain;
+      if (F.total - left > 30 && !(await confirmBox('Waktu yang sudah berjalan di sesi ini akan hilang.', { ok: 'Ulang', title: 'Ulang sesi?' }))) return;
+      F.running = false; setFokusRunning(false); F.mode = 'fokus'; F.total = F.remain = state.settings.fokusMenit * 60; rerender(); },
     fkSkip: () => { F.running = false; setFokusRunning(false); if (F.mode === 'fokus') { F.mode = 'istirahat'; F.total = F.remain = 5 * 60; } else { F.mode = 'fokus'; F.total = F.remain = state.settings.fokusMenit * 60; } rerender(); },
     faqJump: (el, e) => { e.preventDefault(); document.getElementById('faq-' + el.dataset.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
   },
@@ -268,7 +271,12 @@ register({
     jenjangSet: (el) => {
       const v = el.value, prev = state.profile.jenjang;
       el.checked = false; document.querySelector(`input[name="jenjang"][value="${prev}"]`).checked = true;
-      requirePIN(() => { convertJadwal(v); state.profile.jenjang = v; save(); applyTheme(); toast(`Mode ${JENJANG[v]} aktif`); rerender(); });
+      requirePIN(async () => {
+        const toK = v === 'kuliah', fromK = prev === 'kuliah';
+        const note = toK !== fromK && state.jadwal.length ? ` Jadwalmu akan diubah ke format ${toK ? 'jam bebas (mulai–selesai)' : 'jam pelajaran ke-'}; cek lagi setelahnya.` : '';
+        if (!(await confirmBox(`Tampilan dan istilah akan menyesuaikan mode ${JENJANG[v]}.${note}`, { ok: `Ganti ke ${JENJANG[v]}`, title: 'Ganti jenjang?' }))) return;
+        convertJadwal(v); state.profile.jenjang = v; save(); applyTheme(); toast(`Mode ${JENJANG[v]} aktif`); rerender();
+      });
     },
     temaSet: (el) => { state.settings.tema = el.value; save(); applyTheme(); },
     aksenSet: (el) => { state.settings.aksen = el.value; save(); applyTheme(); },

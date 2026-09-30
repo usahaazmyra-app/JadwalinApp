@@ -2,7 +2,7 @@
 import { state, save, replaceState, putFile, flush } from '../store.js';
 import { esc, iso, mondayOf, jam, HARI } from '../util.js';
 import { MAPEL_DEFAULT, JENJANG, newMapel, slots, isKuliah, demoData, mapelById, PAL, convertJadwal, singkat } from '../logic.js';
-import { ic, seg, field, select, empty, toast, mdot, mcol, gchip } from '../ui.js';
+import { ic, seg, field, select, empty, toast, mdot, mcol, gchip, confirmBox } from '../ui.js';
 import { slotForm, kuliahForm, mapelForm } from '../forms.js';
 import { register, rerender, go } from '../core.js';
 import { applyTheme } from '../theme.js';
@@ -127,8 +127,11 @@ register({
     obDemo: () => { demoData(); save(); applyTheme(); navigator.storage?.persist?.().catch(() => {}); toast('Data contoh dimuat'); go('#/'); },
     obRestore: () => { go('#/backup'); },
     obSlot: (el) => slotForm(obDay, Number(el.dataset.j), state.profile.pola === 'ab' ? (window.__obL || 'A') : null),
-    obCopyDay: () => {
+    obCopyDay: async () => {
       const prev = obDay === 1 ? null : obDay - 1; if (!prev) { toast('Senin tidak punya hari sebelumnya'); return; }
+      const HN = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'], day = obDay;
+      if (state.jadwal.some((e) => e.hari === day) && !(await confirmBox(`Jadwal ${HN[day]} yang sudah diisi akan diganti dengan jadwal ${HN[prev]}.`, { ok: 'Ganti', danger: true, title: `Timpa jadwal ${HN[day]}?` }))) return;
+      if (day !== obDay) return;
       state.jadwal = state.jadwal.filter((e) => e.hari !== obDay);
       state.jadwal.filter((e) => e.hari === prev).forEach((e) => state.jadwal.push({ ...e, id: Math.random().toString(36).slice(2), hari: obDay }));
       save(); rerender();

@@ -2,7 +2,7 @@
 import { state, save, putFile } from './store.js';
 import { uid, esc, iso, addDays, today, stamp, parseISO, jam, fmtLong, fmtShort, HARI3, toMin, hash, $ } from './util.js';
 import { PAL, mapelById, isKuliah, isSD, lessonNow, lessonsOn, nextMeeting, bentrok, newMapel, singkat, JENIS_TUGAS, slots, istilah, kgKey, kgStart } from './logic.js';
-import { openSheet, closeSheet, field, area, select, seg, picks, swRow, ic, toast, schip, kgState, kgKat } from './ui.js';
+import { openSheet, closeSheet, field, area, select, seg, picks, swRow, ic, toast, schip, kgState, kgKat, confirmBox } from './ui.js';
 import { register, go, rerender } from './core.js';
 
 export const mapelOpts = (none = true) => [...(none ? [['', '— Tanpa mapel —']] : []), ...state.mapel.map((m) => [m.id, m.nama])];
@@ -329,20 +329,27 @@ register({
   actions: {
     closeSheet: (el) => closeSheet(true, !!el.getAttribute('href')),
     qaDetail: (el) => { const f = el.closest('form'); const r = saveQuickTask(new FormData(f), true); if (typeof r === 'string') { const e = f.querySelector('.form-error'); e.textContent = r; e.hidden = false; } else closeSheet(false); },
-    slotClear: (el) => { const f = el.closest('form'); const fd = new FormData(f); setSlot(Number(fd.get('hari')), Number(fd.get('jamKe')), fd.get('minggu') || 'semua', null); save(); closeSheet(false); rerender(); },
-    kuliahDel: (el) => { state.jadwal = state.jadwal.filter((e) => e.id !== el.dataset.id); save(); closeSheet(false); rerender(); },
-    mapelDel: (el) => {
-      const id = el.dataset.id, used = state.jadwal.some((e) => e.mapelId === id) || state.tugas.some((t) => t.mapelId === id);
-      if (used && !el.dataset.sure) { el.dataset.sure = '1'; el.innerHTML = 'Yakin? Jadwalnya ikut terhapus'; return; }
-      state.mapel = state.mapel.filter((m) => m.id !== id); state.jadwal = state.jadwal.filter((e) => e.mapelId !== id);
+    slotClear: async (el) => { const f = el.closest('form'); const fd = new FormData(f); const HN = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      if (!(await confirmBox(`Kosongkan jam ke-${fd.get('jamKe')} hari ${HN[Number(fd.get('hari'))]}${fd.get('minggu') && fd.get('minggu') !== 'semua' ? ' (Minggu ' + fd.get('minggu') + ')' : ''}?`, { ok: 'Kosongkan', danger: true, title: 'Kosongkan slot?' }))) return; setSlot(Number(fd.get('hari')), Number(fd.get('jamKe')), fd.get('minggu') || 'semua', null); save(); closeSheet(false); rerender(); },
+    kuliahDel: async (el) => { const e = state.jadwal.find((x) => x.id === el.dataset.id); const HN = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      if (!(await confirmBox(`Hapus jadwal ${esc(mapelById(e?.mapelId)?.nama || 'kuliah')} hari ${HN[e?.hari] || ''} ${e ? jam(e.mulai) : ''}?`, { ok: 'Hapus', danger: true, title: 'Hapus jadwal kuliah?' }))) return; state.jadwal = state.jadwal.filter((e) => e.id !== el.dataset.id); save(); closeSheet(false); rerender(); },
+    mapelDel: async (el) => {
+      const id = el.dataset.id, m = mapelById(id);
+      const nj = state.jadwal.filter((e) => e.mapelId === id).length, nt = state.tugas.filter((t) => t.mapelId === id).length;
+      const info = [nj ? `${nj} slot jadwal ikut terhapus` : '', nt ? `${nt} tugas tetap ada tanpa ${istilah().mapel.toLowerCase()}` : ''].filter(Boolean).join(', ');
+      if (!(await confirmBox(`“${esc(m?.nama || '')}” akan dihapus${info ? '. ' + info.charAt(0).toUpperCase() + info.slice(1) : ''}.`, { ok: 'Hapus', danger: true, title: `Hapus ${istilah().mapel.toLowerCase()}?` }))) return;
+      state.mapel = state.mapel.filter((x) => x.id !== id); state.jadwal = state.jadwal.filter((e) => e.mapelId !== id);
       state.tugas.forEach((t) => { if (t.mapelId === id) t.mapelId = ''; });
       save(); closeSheet(false); rerender();
     },
-    pgDel: (el) => { state.pengecualian = state.pengecualian.filter((p) => p.id !== el.dataset.id); save(); closeSheet(false); rerender(); },
+    pgDel: async (el) => {
+      if (!(await confirmBox('Pengecualian ini akan dihapus dan jadwal di tanggal itu kembali seperti biasa.', { ok: 'Hapus', danger: true, title: 'Hapus libur/perubahan?' }))) return; state.pengecualian = state.pengecualian.filter((p) => p.id !== el.dataset.id); save(); closeSheet(false); rerender(); },
     kgOpen: (el) => { const k = state.kegiatan.find((x) => x.id === el.dataset.id); if (k) kgDetail(k, parseISO(el.dataset.d)); },
     kgDone: (el) => { const k = state.kegiatan.find((x) => x.id === el.dataset.id); if (k) toggleKg(k, parseISO(el.dataset.d)); },
-    kgDel: (el) => { const id = el.dataset.id; state.kegiatan = state.kegiatan.filter((k) => k.id !== id); for (const key of Object.keys(state.kegiatanSelesai)) if (key.startsWith(id + ':')) delete state.kegiatanSelesai[key]; save(); closeSheet(false); rerender(); },
-    ujDel: (el) => { state.ujian = state.ujian.filter((u) => u.id !== el.dataset.id); save(); closeSheet(false); rerender(); },
+    kgDel: async (el) => { const id = el.dataset.id; const kg = state.kegiatan.find((k) => k.id === id);
+      if (!(await confirmBox(`“${esc(kg?.nama || 'Kegiatan')}” beserta semua jadwal pertemuan dan tanda selesainya akan dihapus.`, { ok: 'Hapus', danger: true, title: 'Hapus kegiatan?' }))) return; state.kegiatan = state.kegiatan.filter((k) => k.id !== id); for (const key of Object.keys(state.kegiatanSelesai)) if (key.startsWith(id + ':')) delete state.kegiatanSelesai[key]; save(); closeSheet(false); rerender(); },
+    ujDel: async (el) => { const u = state.ujian.find((x) => x.id === el.dataset.id);
+      if (!(await confirmBox(`${esc(u?.jenis || 'Ujian')} ${esc(mapelById(u?.mapelId)?.nama || '')} beserta daftar materinya akan dihapus.`, { ok: 'Hapus', danger: true, title: 'Hapus ujian?' }))) return; state.ujian = state.ujian.filter((u) => u.id !== el.dataset.id); save(); closeSheet(false); rerender(); },
     pinForgot: () => {
       openSheet({
         title: 'Lupa PIN', submit: 'Lanjut',
@@ -350,7 +357,7 @@ register({
         onSubmit: (fd) => { if (hash(fd.get('a').trim().toLowerCase()) !== state.profile.pinA) return 'Jawaban belum cocok.'; closeSheet(false); Promise.resolve().then(pinSetup); return false; },
       });
     },
-    pinRemove: () => { requirePIN(() => { Object.assign(state.profile, { pin: null, pinA: null }); save(); toast('PIN dihapus'); rerender(); }); },
+    pinRemove: () => { requirePIN(async () => { if (!(await confirmBox('Tanpa PIN, siapa pun bisa menghapus data dan mengganti jenjang.', { ok: 'Hapus PIN', danger: true, title: 'Hapus PIN pendamping?' }))) return; Object.assign(state.profile, { pin: null, pinA: null }); save(); toast('PIN dihapus'); rerender(); }); },
   },
   changes: {
     qaMode: (el) => { closeSheet(false); quickAdd(el.value); },

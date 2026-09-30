@@ -2,7 +2,7 @@
 import { state, save } from '../store.js';
 import { esc, iso, fmtShort, fmtLong, fmtRange, jam, today, addDays, mondayOf, parseISO, toMin, nowMin, HARI, HARI3, uid, daysBetween } from '../util.js';
 import { slots, weekLetter, lessonsOn, isKuliah, mapelById, exceptionOn, istilah, lessonNow } from '../logic.js';
-import { ic, rootTop, subTop, sect, grp, schip, gchip, mchip, mdot, mcol, seg, empty, openSheet, field, toast } from '../ui.js';
+import { ic, rootTop, subTop, sect, grp, schip, gchip, mchip, mdot, mcol, seg, empty, openSheet, field, toast, confirmBox, closeSheet } from '../ui.js';
 import { slotForm, kuliahForm, mapelForm, pengecualianForm } from '../forms.js';
 import { register, rerender, go } from '../core.js';
 
@@ -143,7 +143,14 @@ register({
     semesterBaru: () => openSheet({
       title: 'Semester baru', submit: 'Mulai semester baru',
       body: `${field('Nama semester', 'sem', '', 'text', 'autofocus placeholder="Misal: Semester 4"')}<label class="set-row" style="padding:4px 0"><span class="col grow" style="gap:2px"><b>Salin jadwal lama</b><span class="small muted">Matikan untuk mulai dari kosong. Tugas dan catatan tetap tersimpan.</span></span><input type="checkbox" class="switch" name="keep" checked></label>`,
-      onSubmit: (fd) => { if (!fd.get('sem').trim()) return 'Isi nama semester.'; state.profile.semester = fd.get('sem').trim(); if (!fd.get('keep')) { state.jadwal = []; state.mapel = state.mapel.filter((m) => state.tugas.some((t) => t.mapelId === m.id)); } save(); toast('Semester baru dimulai'); rerender(); },
+      onSubmit: (fd) => {
+        const sem = fd.get('sem').trim(); if (!sem) return 'Isi nama semester.';
+        const apply = (keep) => { state.profile.semester = sem; if (!keep) { state.jadwal = []; state.mapel = state.mapel.filter((m) => state.tugas.some((t) => t.mapelId === m.id)); } save(); toast('Semester baru dimulai'); rerender(); };
+        if (fd.get('keep') || !state.jadwal.length) { apply(!!fd.get('keep')); return; }
+        confirmBox(`Semua ${state.jadwal.length} jadwal kuliah semester lama akan dihapus. Mata kuliah yang tidak dipakai tugas juga ikut terhapus. Tugas dan catatan tetap tersimpan.`, { ok: 'Mulai dari kosong', danger: true, title: 'Hapus jadwal lama?' })
+          .then((ok) => { if (ok) { apply(false); closeSheet(false); } });
+        return false;
+      },
     }),
     abSwap: () => { state.profile.abStart = state.profile.abStart === 'A' ? 'B' : 'A'; viewLetter = null; save(); rerender(); },
     abCopy: () => {

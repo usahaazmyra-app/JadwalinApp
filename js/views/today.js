@@ -197,7 +197,7 @@ register({
   views: { hari: hariIni, bawaan, ringkasan },
   actions: {
     notifDismiss: () => { state.settings.notifAskDismissed = true; save(); rerender(); },
-    bawaanDel: (el) => { const d = el.dataset.date; state.bawaanExtra[d] = (state.bawaanExtra[d] || []).filter((x) => x !== el.dataset.teks); save(); rerender(); },
+    bawaanDel: (el) => { const d = el.dataset.date, list = state.bawaanExtra[d] || [], i = list.indexOf(el.dataset.teks); if (i < 0) return; const [x] = list.splice(i, 1); state.bawaanExtra[d] = list; save(); rerender(); toast('Barang dihapus', { label: 'Urungkan', run: () => { const l = state.bawaanExtra[d] || (state.bawaanExtra[d] = []); if (!l.includes(x)) l.splice(Math.min(i, l.length), 0, x); save(); rerender(); } }); },
     rkWA: () => { const txt = ringkasanText(weekData()); window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank', 'noopener'); },
     rkImg: async () => {
       try { await document.fonts?.ready; } catch { /* abaikan */ }

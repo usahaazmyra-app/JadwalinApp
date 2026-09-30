@@ -121,10 +121,16 @@ export function swRow(title, desc, name, on, attrs = '') {
 
 // ---------- toast ----------
 let toastT;
-export function toast(msg) {
+export function toast(msg, action) {
   const t = $('#toast'); if (!t) return;
-  t.textContent = msg; t.hidden = false; t.classList.add('show');
-  clearTimeout(toastT); toastT = setTimeout(() => { t.classList.remove('show'); t.hidden = true; }, 2600);
+  t.textContent = msg;
+  if (action) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'toast-btn'; b.textContent = action.label || 'Urungkan';
+    b.addEventListener('click', (e) => { e.stopPropagation(); t.classList.remove('show'); t.hidden = true; clearTimeout(toastT); action.run(); });
+    t.appendChild(b);
+  }
+  t.hidden = false; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => { t.classList.remove('show'); t.hidden = true; }, action ? 5000 : 2600);
 }
 
 // ---------- kegiatan (bisa digeser untuk menandai selesai) ----------
@@ -162,12 +168,14 @@ function flushGo() { const p = nav.pending; nav.pending = null; if (p) go(p[0], 
 // halaman berganti lewat tautan saat sheet baru ditutup: jangan mundurkan riwayat
 export function cancelPendingBack() { if (nav.holding && sheetEntry) sheetEntry = false; }
 export function onPopState() {
+  dlgCancel();
   if (nav.holding) { nav.holding = false; flushGo(); return true; }
   if (ctx) { sheetEntry = false; closeSheet(true, true); return true; }
   return false;
 }
 export function closeSheet(cancelled = true, fromNav = false) {
   const o = $('#overlay'); if (!o) return;
+  dlgCancel();
   const c = ctx; ctx = null;
   o.hidden = true; o.innerHTML = ''; document.body.classList.remove('noscroll');
   if (c && c.returnTo && document.contains(c.returnTo)) { try { c.returnTo.focus({ preventScroll: true }); } catch { /* abaikan */ } }
@@ -192,8 +200,32 @@ export function submitSheet(form) {
   if (err === false) return; // tetap terbuka (mis. sheet diganti)
   if (ctx === c) closeSheet(false);
 }
-export function confirmBox(msg, { ok = 'Ya, lanjutkan', danger = false, title = 'Yakin?' } = {}) {
+// Konfirmasi sebelum aksi yang tidak bisa dibatalkan.
+// Bila sebuah sheet sedang terbuka (misal form Ubah), dialog tampil DI ATAS sheet itu
+// sehingga menekan Batal tidak menghilangkan isian form.
+let dlgDone = null;
+export const dlgOpen = () => !!dlgDone;
+export function dlgCancel() { if (dlgDone) dlgDone(false); }
+export function confirmBox(msg, { ok = 'Ya, lanjutkan', danger = false, title = 'Yakin?', cancel = 'Batal' } = {}) {
+  if (dlgDone) dlgDone(false);
+  if (!ctx) {
+    return new Promise((res) => {
+      openSheet({ title, body: `<p class="p">${msg}</p>`, submit: ok, danger, left: `<button type="button" class="btn btn-line" data-act="closeSheet">${cancel}</button>`, onSubmit: () => { res(true); }, onClose: () => res(false) });
+    });
+  }
   return new Promise((res) => {
-    openSheet({ title, body: `<p class="p">${msg}</p>`, submit: ok, danger, onSubmit: () => { res(true); }, onClose: () => res(false) });
+    let d = $('#dlg');
+    if (!d) { d = document.createElement('div'); d.id = 'dlg'; document.body.appendChild(d); }
+    const prevFocus = document.activeElement;
+    d.innerHTML = `<div class="dlg-scrim" data-dlg="0"></div><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlgT" aria-describedby="dlgM"><h2 class="h2" id="dlgT">${title}</h2><p class="p" id="dlgM">${msg}</p><div class="row dlg-foot"><button type="button" class="btn btn-line grow" data-dlg="0">${cancel}</button><button type="button" class="btn ${danger ? 'btn-dangerfill' : 'btn-primary'} grow" data-dlg="1">${ok}</button></div></div>`;
+    d.hidden = false;
+    const onClick = (e) => { const b = e.target.closest('[data-dlg]'); if (b) { e.preventDefault(); e.stopPropagation(); dlgDone(b.dataset.dlg === '1'); } };
+    d.addEventListener('click', onClick);
+    dlgDone = (v) => {
+      dlgDone = null; d.removeEventListener('click', onClick); d.hidden = true; d.innerHTML = '';
+      if (prevFocus && document.contains(prevFocus)) { try { prevFocus.focus({ preventScroll: true }); } catch { /* abaikan */ } }
+      res(v);
+    };
+    setTimeout(() => d.querySelector('[data-dlg="0"]')?.focus(), 30);
   });
 }

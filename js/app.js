@@ -2,7 +2,7 @@
 import { load, state, save, flush } from './store.js';
 import { $, isWide } from './util.js';
 import { ACT, CHG, INP, VIEWS, FORMS, setRenderer } from './core.js';
-import { closeSheet, submitSheet, sheetOpen, ic, toast, onPopState, cancelPendingBack } from './ui.js';
+import { closeSheet, submitSheet, sheetOpen, ic, toast, onPopState, cancelPendingBack, dlgOpen, dlgCancel } from './ui.js';
 import { quickAdd } from './forms.js';
 import { applyTheme } from './theme.js';
 import { checkReminders } from './notify.js';
@@ -111,6 +111,7 @@ document.addEventListener('submit', (e) => {
   if (f.dataset.form && FORMS[f.dataset.form]) { e.preventDefault(); FORMS[f.dataset.form](f, e); }
 });
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && dlgOpen()) { dlgCancel(); return; }
   if (e.key === 'Escape' && sheetOpen()) closeSheet(true);
   // Enter di formulir tanpa tombol kirim (misal profil onboarding) tetap mengirim formulir
   if (e.key === 'Enter' && !e.isComposing && e.target.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'submit'].includes(e.target.type)) {
