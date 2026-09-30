@@ -73,7 +73,14 @@ document.addEventListener('submit', (e) => {
   if (f.getAttribute('id') === 'sheetForm') { e.preventDefault(); submitSheet(f); return; }
   if (f.dataset.form && FORMS[f.dataset.form]) { e.preventDefault(); FORMS[f.dataset.form](f, e); }
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheetOpen()) closeSheet(true); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && sheetOpen()) closeSheet(true);
+  // Enter di formulir tanpa tombol kirim (misal profil onboarding) tetap mengirim formulir
+  if (e.key === 'Enter' && !e.isComposing && e.target.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'submit'].includes(e.target.type)) {
+    const f = e.target.form;
+    if (f && !f.querySelector('[type=submit], button:not([type])')) { e.preventDefault(); f.requestSubmit(); }
+  }
+});
 // riwayat navigasi di dalam aplikasi, supaya tombol Kembali kembali ke halaman asal
 const stack = [location.hash || '#/'];
 window.addEventListener('hashchange', () => {

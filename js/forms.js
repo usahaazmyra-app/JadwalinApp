@@ -120,7 +120,7 @@ export function slotForm(hari, jamKe, letter) {
     body: `<p class="small muted" style="margin:0">${s ? `${jam(s.mulai)}–${jam(s.selesai)}` : ''}</p>
 ${select(istilah().mapel, 'mapelId', mapelOpts(false), cur?.mapelId || state.mapel[0]?.id || '')}
 ${field('Ruang (opsional)', 'ruang', cur?.ruang || '', 'text', 'placeholder="Kosongkan untuk memakai ruang default mapel"')}
-${L ? `<div class="field"><span class="label">Berlaku untuk</span>${seg('minggu', [['A', 'Minggu A'], ['B', 'Minggu B'], ['semua', 'Semua']], cur ? cur.minggu : 'semua')}</div>` : '<input type="hidden" name="minggu" value="semua">'}
+${L ? `<div class="field"><span class="label">Berlaku untuk</span>${seg('minggu', [['A', 'Minggu A'], ['B', 'Minggu B'], ['semua', 'Semua']], cur ? cur.minggu : (L === 'B' || entries.length ? L : 'semua'))}</div>` : '<input type="hidden" name="minggu" value="semua">'}
 <input type="hidden" name="hari" value="${hari}"><input type="hidden" name="jamKe" value="${jamKe}">
 ${state.mapel.length ? '' : '<p class="small muted">Belum ada mapel. Tambahkan dulu di Kelola mapel.</p>'}`,
     onSubmit: (fd) => {
@@ -167,14 +167,14 @@ export function mapelForm(m) {
   openSheet({
     title: isNew ? `Tambah ${istilah().mapel.toLowerCase()}` : `Ubah ${istilah().mapel.toLowerCase()}`, submit: 'Simpan',
     left: isNew ? '' : `<button type="button" class="btn btn-danger" data-act="mapelDel" data-id="${m.id}">${ic('trash', 18)}Hapus</button>`,
-    body: `<div class="grid2 g21">${field('Nama', 'nama', m.nama, 'text', 'required maxlength="40" autofocus')}${field('Singkatan', 'singkat', m.singkat, 'text', 'maxlength="4"')}</div>
+    body: `<div class="grid2 g21">${field('Nama', 'nama', m.nama, 'text', 'required maxlength="40" autofocus')}${field('Singkatan', 'singkat', isNew ? '' : m.singkat, 'text', `maxlength="4" placeholder="${isNew ? 'Otomatis' : esc(singkat(m.nama))}"`)}</div>
 <div class="field"><span class="label">Warna</span><div class="swatches">${sw}</div></div>
 <div class="grid2">${field(istilah().guru, 'guru', m.guru)}${field('Ruang default', 'ruang', m.ruang)}</div>
 ${isKuliah() ? field('SKS', 'sks', m.sks || '', 'number', 'min="0" max="8" inputmode="numeric"') : ''}
 ${area('Barang bawaan tetap (satu per baris)', 'bawaan', (m.bawaan || []).join('\n'), 'rows="3" placeholder="Buku paket\nKalkulator"')}`,
     onSubmit: (fd) => {
       const nama = fd.get('nama').trim(); if (!nama) return 'Nama belum diisi.';
-      Object.assign(m, { nama, singkat: (fd.get('singkat').trim() || singkat(nama)).toUpperCase().slice(0, 4), warna: Number(fd.get('warna') ?? m.warna), guru: fd.get('guru').trim(), ruang: fd.get('ruang').trim(), sks: Number(fd.get('sks') || 0), bawaan: fd.get('bawaan').split('\n').map((x) => x.trim()).filter(Boolean) });
+      Object.assign(m, { nama, singkat: (fd.get('singkat').trim().replace(/^—$/, '') || singkat(nama)).toUpperCase().slice(0, 4), warna: Number(fd.get('warna') ?? m.warna), guru: fd.get('guru').trim(), ruang: fd.get('ruang').trim(), sks: Number(fd.get('sks') || 0), bawaan: fd.get('bawaan').split('\n').map((x) => x.trim()).filter(Boolean) });
       if (isNew) state.mapel.push(m);
       save(); rerender();
     },
