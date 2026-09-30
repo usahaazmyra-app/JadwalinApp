@@ -1,5 +1,5 @@
 // Service worker Jadwalin: offline penuh + klik notifikasi
-const VERSION = 'jadwalin-v1.0.3';
+const VERSION = 'jadwalin-v1.0.4';
 const CORE = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/core.js', 'js/util.js', 'js/store.js', 'js/logic.js', 'js/ui.js', 'js/forms.js', 'js/notify.js', 'js/theme.js', 'js/faq.js',

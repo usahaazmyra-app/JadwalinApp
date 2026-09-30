@@ -240,25 +240,57 @@ export function summaryText(d = today()) {
   return parts.join(' · ');
 }
 
+// sisa waktu yang dibaca manusia: "5 menit", "1 jam 15 menit"
+export function sisaWaktu(ms) {
+  const m = Math.max(1, Math.ceil(ms / 6e4 - 1e-9));
+  if (m < 60) return `${m} menit`;
+  const h = Math.floor(m / 60), r = m % 60;
+  return r ? `${h} jam ${r} menit` : `${h} jam`;
+}
+const hariLagi = (n) => (n <= 0 ? 'hari ini' : n === 1 ? 'besok' : `${n} hari lagi`);
+
+// Setiap pengingat punya: time (kapan dikirim), until (kapan kabarnya kedaluwarsa)
+// dan render(now) yang menyusun teks sesuai waktu SAAT dikirim; render mengembalikan null bila sudah tidak relevan.
 export function reminders(now = new Date()) {
-  const n = state.settings.notif, out = [], t0 = today();
-  const at = (d, t) => { const [h, m] = t.split(':').map(Number); return new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m); };
-  if (n.pagi) out.push({ key: `pagi:${iso(t0)}`, time: at(t0, n.jamPagi), title: `Selamat pagi${state.profile.nama ? ', ' + state.profile.nama : ''}`, body: summaryText(t0), url: '#/' });
+  const n = state.settings.notif, out = [], t0 = startOfDay(now);
+  const at = (d, t) => { const [h, m] = (t || '07:00').split(':').map(Number); return new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m); };
+  const add = (r) => { const first = r.render(r.time); if (first) out.push({ ...r, ...first }); };
+  if (n.pagi) add({ key: `pagi:${iso(t0)}`, time: at(t0, n.jamPagi), until: addDays(t0, 1), url: '#/',
+    render: () => ({ title: `Selamat pagi${state.profile.nama ? ', ' + state.profile.nama : ''}`, body: summaryText(t0) }) });
   for (const t of state.tugas) {
     if (t.selesai || !t.deadline || t.ingat === false) continue;
-    const d = parseDT(t.deadline);
-    if (n.h1) out.push({ key: `h1:${t.id}:${t.deadline}`, time: at(addDays(startOfDay(d), -1), n.jamH1), title: `Besok: ${t.judul}`, body: `${mapelName(t.mapelId)} · deadline ${fmtLong(d)} ${jam(t.deadline.slice(11, 16))}`, url: `#/tugas/${t.id}` });
-    if (n.dekat) out.push({ key: `dk:${t.id}:${t.deadline}`, time: new Date(d - n.dekatJam * 36e5), title: `${n.dekatJam} jam lagi: ${t.judul}`, body: `Deadline pukul ${jam(t.deadline.slice(11, 16))}`, url: `#/tugas/${t.id}` });
+    const d = parseDT(t.deadline), dl = jam(t.deadline.slice(11, 16)), mp = mapelName(t.mapelId);
+    if (n.h1) add({ key: `h1:${t.id}:${t.deadline}`, time: at(addDays(startOfDay(d), -1), n.jamH1), until: d, url: `#/tugas/${t.id}`,
+      render: (w) => {
+        if (w >= d) return null;
+        const hd = daysBetween(startOfDay(w), startOfDay(d));
+        return { title: `${hd <= 0 ? 'Hari ini' : hd === 1 ? 'Besok' : hd + ' hari lagi'}: ${t.judul}`, body: `${mp} · deadline ${fmtLong(d)} ${dl}` };
+      } });
+    if (n.dekat) add({ key: `dk:${t.id}:${t.deadline}`, time: new Date(d - n.dekatJam * 36e5), until: d, url: `#/tugas/${t.id}`,
+      render: (w) => (w >= d ? null : { title: `${sisaWaktu(d - w)} lagi: ${t.judul}`, body: `${mp} · deadline pukul ${dl}` }) });
   }
   if (n.kegiatan) for (let i = 0; i < 2; i++) {
     const d = addDays(t0, i);
-    for (const k of kegiatanOn(d)) out.push({ key: `kg:${k.id}:${iso(d)}`, time: new Date(at(d, k.mulai) - n.kegiatanMenit * 6e4), title: `${k.nama} ${n.kegiatanMenit} menit lagi`, body: `${jam(k.mulai)}–${jam(k.selesai)}${k.lokasi ? ' · ' + k.lokasi : ''}`, url: '#/kegiatan' });
+    for (const k of kegiatanOn(d)) {
+      const mulai = at(d, k.mulai);
+      add({ key: `kg:${k.id}:${iso(d)}:${k.mulai}`, time: new Date(mulai - n.kegiatanMenit * 6e4), until: mulai, url: '#/kegiatan',
+        render: (w) => (w >= mulai ? null : { title: `${k.nama} ${sisaWaktu(mulai - w)} lagi`, body: `Mulai ${jam(k.mulai)}–${jam(k.selesai)}${k.lokasi ? ' · ' + k.lokasi : ''}` }) });
+    }
   }
   if (n.ujian) for (const u of state.ujian) {
-    const d = parseISO(u.tanggal);
-    for (const h of [3, 1]) out.push({ key: `uj${h}:${u.id}`, time: at(addDays(d, -h), n.jamH1), title: `${u.jenis || 'Ujian'} ${h === 1 ? 'besok' : '3 hari lagi'}: ${mapelName(u.mapelId)}`, body: (u.materi || []).length ? `${u.materi.filter((x) => x.done).length}/${u.materi.length} materi sudah dipelajari` : fmtLong(d), url: '#/ujian' });
+    const d = parseISO(u.tanggal), mulai = at(d, u.mulai);
+    const t1 = at(addDays(d, -1), n.jamH1);
+    for (const h of [3, 1]) add({ key: `uj${h}:${u.id}:${u.tanggal}:${u.mulai || ""}`, time: at(addDays(d, -h), n.jamH1), until: mulai, url: '#/ujian',
+      render: (w) => {
+        if (w >= mulai) return null;
+        if (h === 3 && w >= t1) return null; // sudah waktunya pengingat H-1, cukup kirim yang itu
+        const hd = daysBetween(startOfDay(w), d);
+        const m = u.materi || [];
+        return { title: `${u.jenis || 'Ujian'} ${hariLagi(hd)}: ${mapelName(u.mapelId)}`, body: `${fmtLong(d)}${u.mulai ? ' ' + jam(u.mulai) : ''}${m.length ? ` · ${m.filter((x) => x.done).length}/${m.length} materi sudah dipelajari` : ''}` };
+      } });
   }
-  if (state.settings.ringkasanOtomatis && isSD() && t0.getDay() === 0) out.push({ key: `rk:${iso(t0)}`, time: at(t0, '18:00'), title: 'Ringkasan mingguan siap', body: 'Kirim ringkasan PR dan bawaan ke orang tua.', url: '#/ringkasan' });
+  if (state.settings.ringkasanOtomatis && isSD() && t0.getDay() === 0) add({ key: `rk:${iso(t0)}`, time: at(t0, '18:00'), until: addDays(t0, 1), url: '#/ringkasan',
+    render: () => ({ title: 'Ringkasan mingguan siap', body: 'Kirim ringkasan PR dan bawaan ke orang tua.' }) });
   return out;
 }
 
