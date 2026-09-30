@@ -167,6 +167,17 @@ export function kegiatanOn(date) {
     .filter((k) => (k.ulang === 'mingguan' ? (k.hari || []).includes(dow) : k.tanggal === s))
     .sort((a, b) => toMin(a.mulai) - toMin(b.mulai));
 }
+// status selesai per pertemuan kegiatan (kunci: id + tanggal)
+export const kgKey = (k, d) => `${k.id}:${iso(d)}`;
+export const kgDone = (k, d) => !!(state.kegiatanSelesai || {})[kgKey(k, d)];
+export function kgStart(k, d) { const [h, m] = (k.mulai || '00:00').split(':').map(Number); return new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m); }
+export function kgEnd(k, d) { const [h, m] = (k.selesai || k.mulai || '00:00').split(':').map(Number); return new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m); }
+export const kgStarted = (k, d, now = new Date()) => now >= kgStart(k, d);
+export function kgNextDate(k, from = today()) {
+  if (k.ulang === 'sekali') return k.tanggal ? parseISO(k.tanggal) : null;
+  for (let i = 0; i < 7; i++) { const x = addDays(from, i); if ((k.hari || []).includes(x.getDay())) return x; }
+  return null;
+}
 export function bentrok(k) {
   const dates = [];
   if (k.ulang === 'sekali') { if (k.tanggal) dates.push(parseISO(k.tanggal)); }

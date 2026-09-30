@@ -1,8 +1,8 @@
 // Kalender minggu & bulan, Ekskul & les, Jadwal ujian
 import { state, save } from '../store.js';
 import { esc, iso, fmtLong, fmtShort, fmtRange, jam, today, addDays, mondayOf, parseISO, parseDT, HARI, HARI3, BULAN, daysBetween, toMin } from '../util.js';
-import { lessonsOn, kegiatanOn, isKuliah, mapelById, mapelName, exceptionOn, upcomingUjian } from '../logic.js';
-import { ic, rootTop, subTop, sect, grp, schip, gchip, mchip, segl, empty, picks } from '../ui.js';
+import { lessonsOn, kegiatanOn, isKuliah, mapelById, mapelName, exceptionOn, upcomingUjian, kgNextDate } from '../logic.js';
+import { ic, rootTop, subTop, sect, grp, schip, gchip, mchip, segl, empty, picks, kgRow, kgState } from '../ui.js';
 import { kegiatanForm, ujianForm } from '../forms.js';
 import { register, rerender } from '../core.js';
 
@@ -17,7 +17,7 @@ function dayItems(d) {
     const names = [...new Set(L.items.map((i) => i.mapel.nama))];
     out.push({ c: 'pel', time: `${jam(L.items[0].mulai)}`, time2: jam(L.items.at(-1).selesai), title: `${isKuliah() ? 'Kuliah' : 'Sekolah'} · ${L.items.length} ${isKuliah() ? 'kuliah' : 'pelajaran'}`, sub: names.slice(0, 3).join(', ') + (names.length > 3 ? `, +${names.length - 3}` : ''), kind: 'accent', k: 'Pelajaran', href: '#/jadwal', sort: toMin(L.items[0].mulai) });
   }
-  for (const k of kegiatanOn(d)) out.push({ c: k.kategori === 'les' ? 'les' : 'eks', time: jam(k.mulai), time2: jam(k.selesai), title: k.nama, sub: k.lokasi, kind: k.kategori === 'les' ? 'les' : 'ekskul', k: k.kategori === 'les' ? 'Les' : k.kategori === 'ekskul' ? 'Ekskul' : 'Kegiatan', href: '#/kegiatan', sort: toMin(k.mulai) });
+  for (const k of kegiatanOn(d)) out.push({ kg: k, c: k.kategori === 'les' ? 'les' : 'eks', time: jam(k.mulai), time2: jam(k.selesai), title: k.nama, sub: k.lokasi, kind: k.kategori === 'les' ? 'les' : 'ekskul', k: k.kategori === 'les' ? 'Les' : k.kategori === 'ekskul' ? 'Ekskul' : 'Kegiatan', href: '#/kegiatan', sort: toMin(k.mulai) });
   for (const u of state.ujian.filter((u) => u.tanggal === s)) out.push({ c: 'uji', time: jam(u.mulai), time2: jam(u.selesai), title: `${u.jenis || 'Ujian'} ${mapelName(u.mapelId)}`, sub: (u.materi || []).map((x) => x.teks).join(', '), kind: 'ujian', k: 'Ujian', href: '#/ujian', sort: toMin(u.mulai) });
   for (const t of state.tugas.filter((t) => !t.selesai && t.deadline && t.deadline.slice(0, 10) === s)) out.push({ c: 'tgs', time: jam(t.deadline.slice(11, 16)), title: t.judul, sub: `Deadline · ${mapelName(t.mapelId)}`, kind: 'today', k: 'Tugas', href: `#/tugas/${t.id}`, sort: toMin(t.deadline.slice(11, 16)) });
   return out.sort((a, b) => (a.sort ?? -1) - (b.sort ?? -1));
@@ -37,7 +37,7 @@ const legend = (pel = true) => `<div class="legend">${[pel && [C.pel, 'Pelajaran
 function agenda(d) {
   const items = dayItems(d);
   if (!items.length) return `<div class="card"><span class="small muted">Tidak ada agenda.</span></div>`;
-  return `<div class="list">${items.map((x) => `<a class="list-item" href="${x.href}" style="align-items:flex-start"><span class="tcol"><b>${x.time || '—'}</b><span class="small muted">${x.time2 || ''}</span></span><i class="adot" style="background:${C[x.c]}"></i><span class="col grow" style="gap:2px"><b>${esc(x.title)}</b><span class="small muted">${esc(x.sub || '')}</span></span>${schip(x.kind, x.k)}</a>`).join('')}</div>`;
+  return `<div class="list">${items.map((x) => x.kg ? kgRow(x.kg, d) : `<a class="list-item" href="${x.href}" style="align-items:flex-start"><span class="tcol"><b>${x.time || '—'}</b><span class="small muted">${x.time2 || ''}</span></span><i class="adot" style="background:${C[x.c]}"></i><span class="col grow" style="gap:2px"><b>${esc(x.title)}</b><span class="small muted">${esc(x.sub || '')}</span></span>${schip(x.kind, x.k)}</a>`).join('')}</div>`;
 }
 const top = (on) => rootTop(fmtLong(new Date()), 'Kalender', `<a class="icon-btn" href="#/kegiatan" aria-label="Ekskul dan les">${ic('users')}</a><a class="icon-btn" href="#/ujian" aria-label="Jadwal ujian">${ic('flag')}</a>`) + segl([['Minggu', '#/kalender', on === 'm'], ['Bulan', '#/kalender/bulan', on === 'b']]);
 
@@ -81,12 +81,24 @@ function bulan() {
 }
 
 // ---------- ekskul & les ----------
+// status pertemuan hari ini (atau terdekat) + tombol tandai selesai
+function kgNow(k) {
+  const d = kgNextDate(k); if (!d) return '';
+  const st = kgState(k, d), isToday = iso(d) === iso(today());
+  if (!isToday && k.ulang === 'mingguan') return '';
+  if (!isToday && st === 'soon') return '';
+  const label = st === 'done' ? `${isToday ? 'Hari ini' : fmtShort(d)} · selesai` : st === 'live' ? 'Sedang berlangsung' : st === 'past' ? `${isToday ? 'Hari ini' : fmtShort(d)} · belum ditandai` : `Hari ini ${jam(k.mulai)}`;
+  const btn = st === 'done' ? `<button type="button" class="btn btn-line btn-sm" data-act="kgDone" data-id="${k.id}" data-d="${iso(d)}">Batal</button>`
+    : st === 'soon' ? `<button type="button" class="btn btn-line btn-sm" data-act="kgOpen" data-id="${k.id}" data-d="${iso(d)}">Detail</button>`
+    : `<button type="button" class="btn btn-primary btn-sm" data-act="kgDone" data-id="${k.id}" data-d="${iso(d)}">${ic('check', 16)}Selesai</button>`;
+  return `<div class="kg-now"><span class="ibox sm${st === 'done' ? ' ok' : ''}">${ic(st === 'done' ? 'check' : 'clock', 18)}</span><b class="grow small">${label}</b>${btn}</div>`;
+}
 function kegiatan() {
   const list = state.kegiatan.filter((k) => kgFilter === 'semua' || k.kategori === kgFilter);
   const rutin = list.filter((k) => k.ulang === 'mingguan'), sekali = list.filter((k) => k.ulang === 'sekali').sort((a, b) => a.tanggal.localeCompare(b.tanggal));
   const DN = { 0: 'Min', 1: 'Sen', 2: 'Sel', 3: 'Rab', 4: 'Kam', 5: 'Jum', 6: 'Sab' };
   const card = (k) => `<div class="card"><div class="row" style="justify-content:space-between"><span class="row wrap" style="gap:8px"><b style="font-size:17px">${esc(k.nama)}</b>${schip(k.kategori === 'les' ? 'les' : k.kategori === 'ekskul' ? 'ekskul' : 'lainnya', k.kategori === 'les' ? 'Les' : k.kategori === 'ekskul' ? 'Ekskul' : 'Lainnya')}</span><button type="button" class="icon-btn" data-act="kgEdit" data-id="${k.id}" aria-label="Ubah ${esc(k.nama)}">${ic('edit', 18)}</button></div>
-<div class="col" style="gap:6px"><span class="row small muted" style="gap:8px">${ic('clock', 16)}${k.ulang === 'mingguan' ? [...k.hari].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((h) => DN[h]).join(' & ') : fmtShort(parseISO(k.tanggal))} · ${jam(k.mulai)}–${jam(k.selesai)}</span>${k.lokasi ? `<span class="row small muted" style="gap:8px">${ic('pin', 16)}${esc(k.lokasi)}</span>` : ''}<span class="row small muted" style="gap:8px">${ic('repeat', 16)}${k.ulang === 'mingguan' ? 'Tiap minggu' : 'Sekali'}${k.catatan ? ' · ' + esc(k.catatan) : ''}</span></div></div>`;
+<div class="col" style="gap:6px"><span class="row small muted" style="gap:8px">${ic('clock', 16)}${k.ulang === 'mingguan' ? [...k.hari].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((h) => DN[h]).join(' & ') : fmtShort(parseISO(k.tanggal))} · ${jam(k.mulai)}–${jam(k.selesai)}</span>${k.lokasi ? `<span class="row small muted" style="gap:8px">${ic('pin', 16)}${esc(k.lokasi)}</span>` : ''}<span class="row small muted" style="gap:8px">${ic('repeat', 16)}${k.ulang === 'mingguan' ? 'Tiap minggu' : 'Sekali'}${k.catatan ? ' · ' + esc(k.catatan) : ''}</span></div>${kgNow(k)}</div>`;
   return {
     html: `<div class="page narrow">${subTop('Ekskul &amp; les', '#/kalender', `<button class="icon-btn" type="button" data-act="kgAdd" aria-label="Tambah kegiatan">${ic('plus')}</button>`)}
 ${picks('kgf', [['semua', 'Semua'], ['ekskul', 'Ekskul'], ['les', 'Les'], ['lainnya', 'Lainnya']], kgFilter, { attrs: 'data-chg="kgFilter"' })}

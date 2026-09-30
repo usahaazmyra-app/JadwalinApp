@@ -16,7 +16,7 @@ Berjalan **offline**, **tanpa akun**, semua data tersimpan di perangkat (Indexed
 - **Ringkasan pendamping** (kirim ke WhatsApp atau simpan gambar), **PIN pendamping**
 - **Bagikan jadwal kelas** lewat file `.jadwalin`, **backup & pulihkan**
 - Tema terang/gelap, 6 warna aksen, ukuran huruf; tampilan tablet (rel navigasi & panel ganda)
-- **Bantuan & Q&A** (41 pertanyaan)
+- **Bantuan & Q&A** (42 pertanyaan)
 
 ## Struktur
 

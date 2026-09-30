@@ -382,3 +382,21 @@ body.mode-sd .now-title{font-size:32px}
 }
 
 #kgWarn:empty{display:none}
+
+/* ---------- kegiatan: geser untuk selesai ---------- */
+.swipe{position:relative;overflow:hidden;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.swipe-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#16A34A;color:#fff;font-weight:700;font-size:14px}
+.swipe-bg span{display:flex;align-items:center;gap:6px}
+.swipe.undo .swipe-bg{background:#64748B}
+.swipe.locked .swipe-bg{background:var(--ink3)}
+.swipe.locked .swipe-bg span{opacity:.9}
+.swipe-fg{position:relative;background:var(--surface)!important;transition:transform .22s ease;will-change:transform}
+.swipe-fg.dragging{transition:none}
+.swipe.armed .swipe-bg span{transform:scale(1.08)}
+.swipe-fg.is-done .kg-t{text-decoration:line-through;color:var(--ink3)}
+.swipe-fg.is-done .tcol b{color:var(--ink3)}
+.card.done-card{background:#F0FDF4;border-color:#BBF7D0}
+:root[data-theme="dark"] .card.done-card{background:#0F2A1A;border-color:#166534}
+.ibox.ok{background:#DCFCE7;color:#166534}
+:root[data-theme="dark"] .ibox.ok{background:#14532D;color:#BBF7D0}
+.kg-now{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--surface2)}

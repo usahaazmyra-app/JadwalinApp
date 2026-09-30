@@ -23,7 +23,7 @@ export function defaultState() {
       ringkasanOtomatis: false, fokusMenit: 25, notifAskDismissed: false, lastBackup: '',
     },
     mapel: [], jadwal: [], pengecualian: [], tugas: [], kegiatan: [], ujian: [], catatan: [],
-    bawaanCek: {}, bawaanExtra: {}, notifSent: {}, fokus: { tanggal: '', sesi: 0 },
+    bawaanCek: {}, bawaanExtra: {}, notifSent: {}, kegiatanSelesai: {}, fokus: { tanggal: '', sesi: 0 },
   };
 }
 
@@ -32,7 +32,8 @@ function merge(base, src) {
   for (const k of Object.keys(base)) {
     if (!(k in src)) continue;
     const b = base[k], s = src[k];
-    if (b && typeof b === 'object' && !Array.isArray(b) && s && typeof s === 'object' && !Array.isArray(s)) base[k] = merge(b, s);
+    // objek kosong di default = peta bebas (bawaanCek, notifSent, kegiatanSelesai, ...): ambil utuh
+    if (b && typeof b === 'object' && !Array.isArray(b) && s && typeof s === 'object' && !Array.isArray(s)) base[k] = Object.keys(b).length ? merge(b, s) : s;
     else base[k] = s;
   }
   return base;

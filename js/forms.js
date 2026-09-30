@@ -1,8 +1,8 @@
 // Form dalam sheet: tambah cepat, tugas, slot jadwal, mapel, pengecualian, kegiatan, ujian, catatan, PIN
 import { state, save, putFile } from './store.js';
 import { uid, esc, iso, addDays, today, stamp, parseISO, jam, fmtLong, fmtShort, HARI3, toMin, hash, $ } from './util.js';
-import { PAL, mapelById, isKuliah, isSD, lessonNow, lessonsOn, nextMeeting, bentrok, newMapel, singkat, JENIS_TUGAS, slots, istilah } from './logic.js';
-import { openSheet, closeSheet, field, area, select, seg, picks, swRow, ic, toast, schip } from './ui.js';
+import { PAL, mapelById, isKuliah, isSD, lessonNow, lessonsOn, nextMeeting, bentrok, newMapel, singkat, JENIS_TUGAS, slots, istilah, kgKey, kgStart } from './logic.js';
+import { openSheet, closeSheet, field, area, select, seg, picks, swRow, ic, toast, schip, kgState, kgKat } from './ui.js';
 import { register, go, rerender } from './core.js';
 
 export const mapelOpts = (none = true) => [...(none ? [['', '— Tanpa mapel —']] : []), ...state.mapel.map((m) => [m.id, m.nama])];
@@ -159,6 +159,33 @@ ${field('Gedung & ruang', 'ruang', e.ruang, 'text', 'placeholder="Misal: Gedung 
   });
 }
 
+// ---------- detail & tandai selesai kegiatan ----------
+export function toggleKg(k, d) {
+  const st = kgState(k, d);
+  if (st === 'soon') { toast(`Bisa ditandai selesai mulai ${jam(k.mulai)}${iso(d) === iso(today()) ? '' : ', ' + fmtShort(d)}`); return false; }
+  const key = kgKey(k, d);
+  if (st === 'done') { delete state.kegiatanSelesai[key]; toast('Tanda selesai dibatalkan'); }
+  else { state.kegiatanSelesai[key] = stamp(); toast(`${k.nama} selesai`); }
+  save(); rerender(); return true;
+}
+export function kgDetail(k, d) {
+  const st = kgState(k, d), [kind, kat] = kgKat(k);
+  const when = st === 'done' ? `Ditandai selesai ${jam(state.kegiatanSelesai[kgKey(k, d)].slice(11, 16))}`
+    : st === 'live' ? `Sedang berlangsung sampai ${jam(k.selesai)}`
+    : st === 'past' ? 'Sudah lewat, belum ditandai selesai'
+    : `Mulai ${jam(k.mulai)}. Bisa ditandai selesai setelah kegiatan dimulai.`;
+  const row = (icn, t) => `<span class="row small" style="gap:10px;align-items:flex-start;color:var(--ink2)">${ic(icn, 18)}<span>${t}</span></span>`;
+  openSheet({
+    title: esc(k.nama), submit: st === 'done' ? `${ic('reset', 18)}Batalkan selesai` : `${ic('check', 18)}Tandai selesai`, disabled: st === 'soon',
+    left: `<button type="button" class="btn btn-line" data-act="kgEdit" data-id="${k.id}">${ic('edit', 18)}Ubah</button>`,
+    body: `<div class="row wrap" style="gap:8px">${schip(kind, kat)}${st === 'done' ? schip('done', 'Selesai') : st === 'live' ? schip('today', 'Berlangsung') : ''}</div>
+<div class="col" style="gap:10px">${row('calendar', esc(fmtLong(d)))}${row('clock', `${jam(k.mulai)}–${jam(k.selesai)}`)}${k.lokasi ? row('pin', esc(k.lokasi)) : ''}${row('repeat', k.ulang === 'mingguan' ? 'Tiap minggu' : 'Sekali')}${k.catatan ? row('note', esc(k.catatan)) : ''}</div>
+<div class="card ${st === 'done' ? 'done-card' : 'accent-card'} row-card"><span class="ibox${st === 'done' ? ' ok' : ''}">${ic(st === 'done' ? 'check' : 'clock')}</span><span class="small" style="font-weight:600">${when}</span></div>
+<p class="small muted" style="margin:0">Tips: geser kartu kegiatan ke kiri atau kanan untuk menandai selesai dengan cepat.</p>`,
+    onSubmit: () => { toggleKg(k, d); },
+  });
+}
+
 // ---------- mapel ----------
 export function mapelForm(m) {
   const isNew = !m;
@@ -312,7 +339,9 @@ register({
       save(); closeSheet(false); rerender();
     },
     pgDel: (el) => { state.pengecualian = state.pengecualian.filter((p) => p.id !== el.dataset.id); save(); closeSheet(false); rerender(); },
-    kgDel: (el) => { state.kegiatan = state.kegiatan.filter((k) => k.id !== el.dataset.id); save(); closeSheet(false); rerender(); },
+    kgOpen: (el) => { const k = state.kegiatan.find((x) => x.id === el.dataset.id); if (k) kgDetail(k, parseISO(el.dataset.d)); },
+    kgDone: (el) => { const k = state.kegiatan.find((x) => x.id === el.dataset.id); if (k) toggleKg(k, parseISO(el.dataset.d)); },
+    kgDel: (el) => { const id = el.dataset.id; state.kegiatan = state.kegiatan.filter((k) => k.id !== id); for (const key of Object.keys(state.kegiatanSelesai)) if (key.startsWith(id + ':')) delete state.kegiatanSelesai[key]; save(); closeSheet(false); rerender(); },
     ujDel: (el) => { state.ujian = state.ujian.filter((u) => u.id !== el.dataset.id); save(); closeSheet(false); rerender(); },
     pinForgot: () => {
       openSheet({

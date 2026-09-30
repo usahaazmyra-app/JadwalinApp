@@ -2,7 +2,7 @@
 import { state, save } from '../store.js';
 import { esc, iso, fmtLong, fmtShort, jam, toMin, nowMin, today, addDays, mondayOf, stamp, parseDT, fmtRange, daysBetween, $ } from '../util.js';
 import { lessonNow, lessonsOn, openTasks, sortTasks, taskStatus, kegiatanOn, bawaanFor, nextSchoolDay, weekLetter, isKuliah, isSD, mapelById, upcomingUjian, mapelName } from '../logic.js';
-import { ic, rootTop, subTop, sect, taskRow, schip, gchip, mchip, mdot, toast, swRow, empty } from '../ui.js';
+import { ic, rootTop, subTop, sect, taskRow, schip, gchip, mchip, mdot, toast, swRow, empty, kgRow } from '../ui.js';
 import { register, rerender } from '../core.js';
 import { notifPermission } from '../notify.js';
 
@@ -40,7 +40,7 @@ ${prog}${after}</a>`;
 function eventsToday() {
   const ks = kegiatanOn(today());
   if (!ks.length) return '';
-  return `${sect('Hari ini juga', 'Kalender', '#/kalender')}<div class="list">${ks.map((k) => `<a class="list-item" href="#/kegiatan"><span class="tcol"><b>${jam(k.mulai)}</b><span class="small muted">${jam(k.selesai)}</span></span><span class="col grow" style="gap:2px"><b>${esc(k.nama)}</b><span class="small muted">${esc(k.lokasi || '')}</span></span>${schip(k.kategori, k.kategori === 'ekskul' ? 'Ekskul' : k.kategori === 'les' ? 'Les' : 'Lainnya')}</a>`).join('')}</div>`;
+  return `${sect('Hari ini juga', 'Kalender', '#/kalender')}<div class="list">${ks.map((k) => kgRow(k, today())).join('')}</div>`;
 }
 
 function tasksNear(n = 3) {

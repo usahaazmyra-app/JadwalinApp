@@ -65,6 +65,43 @@ document.addEventListener('click', (e) => {
   const fn = ACT[el.dataset.act];
   if (fn) { if (el.tagName === 'BUTTON' || el.getAttribute('href') === null) e.preventDefault(); fn(el, e); }
 });
+// ---------- geser kartu (swipe) untuk aksi cepat, misal menandai kegiatan selesai ----------
+let sw = null, swipedAt = 0;
+document.addEventListener('pointerdown', (e) => {
+  const el = e.target.closest('[data-swipe]');
+  if (!el || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  sw = { el, fg: el.querySelector('.swipe-fg'), x: e.clientX, y: e.clientY, id: e.pointerId, on: false, dx: 0 };
+});
+document.addEventListener('pointermove', (e) => {
+  if (!sw || e.pointerId !== sw.id || !sw.fg) return;
+  const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+  if (!sw.on) {
+    if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; }
+    if (Math.abs(dx) < 10) return;
+    sw.on = true; sw.fg.classList.add('dragging');
+    try { sw.el.setPointerCapture(e.pointerId); } catch { /* abaikan */ }
+  }
+  const w = sw.el.offsetWidth, lim = Math.min(120, w * 0.35);
+  sw.dx = sw.el.classList.contains('locked') ? Math.sign(dx) * Math.min(Math.abs(dx), 60) : dx; // belum waktunya: hanya bergeser sedikit
+  sw.fg.style.transform = `translateX(${sw.dx}px)`;
+  sw.el.classList.toggle('armed', Math.abs(sw.dx) >= lim);
+});
+function endSwipe(e) {
+  if (!sw || (e && e.pointerId !== sw.id)) return;
+  const s = sw; sw = null;
+  if (!s.on) return;
+  swipedAt = Date.now(); s.fg.classList.remove('dragging'); s.el.classList.remove('armed');
+  const w = s.el.offsetWidth, locked = s.el.classList.contains('locked');
+  const hit = e.type === 'pointerup' && (locked ? Math.abs(s.dx) >= 50 : Math.abs(s.dx) >= Math.min(120, w * 0.35));
+  const fn = ACT[s.el.dataset.swipe];
+  if (hit && !locked) { s.fg.style.transform = `translateX(${Math.sign(s.dx) * w}px)`; setTimeout(() => { if (fn) fn(s.el); else s.fg.style.transform = ''; }, 200); }
+  else { s.fg.style.transform = ''; if (hit && fn) fn(s.el); } // terkunci: tampilkan info kapan bisa ditandai
+}
+document.addEventListener('pointerup', endSwipe);
+document.addEventListener('pointercancel', endSwipe);
+// setelah menggeser, jangan anggap sebagai ketukan
+document.addEventListener('click', (e) => { if (Date.now() - swipedAt < 400 && e.target.closest('[data-swipe]')) { e.stopPropagation(); e.preventDefault(); } }, true);
+
 document.addEventListener('change', (e) => { const el = e.target.closest('[data-chg]'); if (el && CHG[el.dataset.chg]) CHG[el.dataset.chg](el, e); });
 document.addEventListener('input', (e) => { if (e.isComposing) return; const el = e.target.closest('[data-inp]'); if (el && INP[el.dataset.inp]) INP[el.dataset.inp](el, e); });
 document.addEventListener('compositionend', (e) => { const el = e.target.closest('[data-inp]'); if (el && INP[el.dataset.inp]) INP[el.dataset.inp](el, e); });
@@ -98,8 +135,8 @@ window.matchMedia('(min-width: 900px)').addEventListener?.('change', () => rende
 // segarkan beranda tiap menit (jam pelajaran berjalan)
 setInterval(() => {
   const n = route().name;
-  const busy = sheetOpen() || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
-  if (!busy && ['hari', 'jadwal', 'kalender'].includes(n) && state.setup) render(false);
+  const busy = sw || sheetOpen() || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+  if (!busy && ['hari', 'jadwal', 'kalender', 'kegiatan'].includes(n) && state.setup) render(false);
 }, 60000);
 setInterval(checkReminders, 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { checkReminders(); if (!sheetOpen()) render(false); } else flush(); });

@@ -1,7 +1,7 @@
 // Komponen UI: ikon, chip, baris tugas, header, sheet/dialog, toast
-import { $, esc, jam } from './util.js';
+import { $, esc, jam, iso } from './util.js';
 import { state } from './store.js';
-import { PAL, mapelById, taskStatus } from './logic.js';
+import { PAL, mapelById, taskStatus, kgDone, kgStarted, kgEnd } from './logic.js';
 import { nav, go } from './core.js';
 
 const I = {
@@ -127,13 +127,28 @@ export function toast(msg) {
   clearTimeout(toastT); toastT = setTimeout(() => { t.classList.remove('show'); t.hidden = true; }, 2600);
 }
 
+// ---------- kegiatan (bisa digeser untuk menandai selesai) ----------
+export const kgKat = (k) => (k.kategori === 'les' ? ['les', 'Les'] : k.kategori === 'ekskul' ? ['ekskul', 'Ekskul'] : ['lainnya', 'Lainnya']);
+export function kgState(k, d, now = new Date()) {
+  if (kgDone(k, d)) return 'done';
+  if (!kgStarted(k, d, now)) return 'soon';
+  return now < kgEnd(k, d) ? 'live' : 'past';
+}
+export function kgRow(k, d) {
+  const st = kgState(k, d), done = st === 'done';
+  const chip = done ? schip('done', 'Selesai') : st === 'live' ? schip('today', 'Berlangsung') : schip(...kgKat(k));
+  const lbl = done ? `${ic('reset', 18)}Batal selesai` : `${ic('check', 18)}Selesai`;
+  return `<div class="swipe${done ? ' undo' : ''}${st === 'soon' ? ' locked' : ''}" data-swipe="kgDone" data-id="${k.id}" data-d="${iso(d)}"><div class="swipe-bg" aria-hidden="true"><span>${lbl}</span><span>${lbl}</span></div>`
+    + `<button type="button" class="list-item swipe-fg${done ? ' is-done' : ''}" data-act="kgOpen" data-id="${k.id}" data-d="${iso(d)}" aria-label="${esc(k.nama)}, ${jam(k.mulai)}${done ? ', selesai' : ''}. Buka detail"><span class="tcol"><b>${jam(k.mulai)}</b><span class="small muted">${jam(k.selesai)}</span></span><span class="col grow" style="gap:2px;text-align:left"><b class="kg-t">${esc(k.nama)}</b><span class="small muted">${esc(k.lokasi || '')}</span></span>${chip}</button></div>`;
+}
+
 // ---------- sheet / dialog ----------
 let ctx = null;
-export function openSheet({ title, body, submit = 'Simpan', onSubmit = null, left = '', onClose = null, danger = false }) {
+export function openSheet({ title, body, submit = 'Simpan', onSubmit = null, left = '', onClose = null, danger = false, disabled = false }) {
   const o = $('#overlay');
   const returnTo = ctx ? ctx.returnTo : document.activeElement;
   body = body.replace(/(id|for)="f-/g, '$1="s-');
-  o.innerHTML = `<div class="scrim" data-act="closeSheet"></div><form class="sheet" id="sheetForm" novalidate role="dialog" aria-modal="true" aria-label="${esc(title.replace(/<[^>]+>/g, ''))}"><div class="grab"></div><div class="sheet-head"><h2 class="h2">${title}</h2><button type="button" class="icon-btn" data-act="closeSheet" aria-label="Tutup">${ic('x')}</button></div><div class="sheet-body">${body}<p class="form-error" role="alert" hidden></p></div>${onSubmit ? `<div class="sheet-foot">${left}<button class="btn ${danger ? 'btn-dangerfill' : 'btn-primary'} grow" type="submit">${submit}</button></div>` : ''}</form>`;
+  o.innerHTML = `<div class="scrim" data-act="closeSheet"></div><form class="sheet" id="sheetForm" novalidate role="dialog" aria-modal="true" aria-label="${esc(title.replace(/<[^>]+>/g, ''))}"><div class="grab"></div><div class="sheet-head"><h2 class="h2">${title}</h2><button type="button" class="icon-btn" data-act="closeSheet" aria-label="Tutup">${ic('x')}</button></div><div class="sheet-body">${body}<p class="form-error" role="alert" hidden></p></div>${onSubmit ? `<div class="sheet-foot">${left}<button class="btn ${danger ? 'btn-dangerfill' : 'btn-primary'} grow" type="submit" ${disabled ? 'disabled' : ''}>${submit}</button></div>` : ''}</form>`;
   o.hidden = false;
   ctx = { onSubmit, onClose, returnTo };
   // entri riwayat agar tombol Kembali HP menutup sheet, bukan pindah halaman

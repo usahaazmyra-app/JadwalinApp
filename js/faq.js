@@ -32,6 +32,7 @@ export const FAQ = [
     ['Apakah tugas yang lewat deadline hilang?', 'Tidak. Tugas tetap di grup <b>Terlambat</b> sampai dicentang selesai atau dihapus.'],
   ]],
   ['kalender', 'Kalender, ekskul & ujian', 'calendar', [
+    ['Bagaimana menandai ekskul atau les sudah selesai?', 'Setelah jam mulainya tiba, <b>geser kartu kegiatan</b> ke kiri atau kanan di Hari Ini atau Kalender. Bisa juga ketuk kartunya lalu tekan <b>Tandai selesai</b>, atau tekan <b>Selesai</b> di halaman Ekskul &amp; les. Geser sekali lagi untuk membatalkan.'],
     ['Bagaimana menambah ekskul atau les rutin?', 'Buka <b>Kalender → ikon Ekskul &amp; les → +</b>. Pilih kategori, hari, jam, dan <b>Tiap minggu</b>.'],
     ['Apa itu peringatan bentrok?', 'Kalau jam kegiatan baru bertabrakan dengan pelajaran atau kegiatan lain, Jadwalin memberi tahu sebelum disimpan. Kamu bisa mengubah jam atau tetap menyimpan.'],
     ['Kenapa tampilan bulan tidak menampilkan pelajaran?', 'Supaya tidak penuh. Tampilan bulan hanya menandai agenda di luar rutinitas: deadline, ujian, libur, dan acara sekali.'],
