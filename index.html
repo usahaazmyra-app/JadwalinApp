@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F5FB">
+<meta name="description" content="Jadwalin — jadwal pelajaran, tugas, ekskul, dan ujian untuk pelajar SD sampai mahasiswa. Jalan tanpa internet.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jadwalin">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Jadwalin</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body class="loading">
+<div id="app">
+  <nav id="nav" class="nav" aria-label="Navigasi utama"></nav>
+  <main id="view" tabindex="-1"></main>
+  <button id="fab" class="fab" type="button" data-act="quickAdd" aria-label="Tambah cepat" hidden><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div id="overlay" hidden></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<noscript><p style="padding:24px;font-family:sans-serif">Jadwalin membutuhkan JavaScript. Aktifkan JavaScript di browser.</p></noscript>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
