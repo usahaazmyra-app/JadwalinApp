@@ -94,8 +94,11 @@ export function empty(icon, title, text, btn = '') {
   return `<div class="empty"><span class="ibox big">${ic(icon, 30)}</span><strong>${title}</strong><span class="muted">${text}</span>${btn}</div>`;
 }
 
-export const field = (label, name, value = '', type = 'text', attrs = '') =>
-  `<div class="field"><label for="f-${name}">${label}</label><input id="f-${name}" class="input" name="${name}" type="${type}" value="${esc(value)}" ${attrs}></div>`;
+export const field = (label, name, value = '', type = 'text', attrs = '') => {
+  const inp = `<input id="f-${name}" class="input" name="${name}" type="${type}" value="${esc(value)}" ${attrs}>`;
+  const pick = type === 'time' || type === 'date';
+  return `<div class="field"><label for="f-${name}">${label}</label>${pick ? `<div class="inwrap">${inp}<span class="in-ic" aria-hidden="true">${ic(type === 'time' ? 'clock' : 'calendar', 18)}</span></div>` : inp}</div>`;
+};
 export const area = (label, name, value = '', attrs = '') =>
   `<div class="field"><label for="f-${name}">${label}</label><textarea id="f-${name}" class="input area" name="${name}" ${attrs}>${esc(value)}</textarea></div>`;
 export function select(label, name, opts, value, attrs = '') {

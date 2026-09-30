@@ -188,9 +188,9 @@ export function pengecualianForm(p) {
   openSheet({
     title: isNew ? 'Tambah pengecualian' : 'Ubah pengecualian', submit: 'Simpan',
     left: isNew ? '' : `<button type="button" class="btn btn-danger" data-act="pgDel" data-id="${p.id}">${ic('trash', 18)}Hapus</button>`,
-    body: `<div class="field"><span class="label">Jenis</span>${seg('jenis', [['libur', 'Libur'], ['pulang', 'Pulang cepat'], ['khusus', 'Jadwal khusus']], p.jenis)}</div>
+    body: `<div class="field"><span class="label">Jenis</span>${seg('jenis', [['libur', 'Libur'], ['pulang', 'Pulang cepat'], ['khusus', 'Jadwal khusus']], p.jenis, 'data-chg="pgJenis"')}</div>
 <div class="grid2">${field('Dari tanggal', 'dari', p.dari, 'date', 'required')}${field('Sampai (opsional)', 'sampai', p.sampai || '', 'date')}</div>
-${field('Jam pulang (untuk pulang cepat)', 'jamPulang', p.jamPulang || '11:00', 'time')}
+<div id="pgJam" ${p.jenis === 'pulang' ? '' : 'hidden'}>${field('Jam pulang', 'jamPulang', p.jamPulang || '11:00', 'time')}</div>
 ${field('Keterangan', 'ket', p.ket, 'text', 'placeholder="Misal: rapat guru, PTS, class meeting"')}`,
     onSubmit: (fd) => {
       if (!fd.get('dari')) return 'Isi tanggal mulai.';
@@ -268,7 +268,7 @@ ${area('Materi yang diujikan (satu per baris)', 'materi', (d.materi || []).map((
 }
 
 // ---------- PIN pendamping ----------
-export const PIN_Q = ['Nama hewan peliharaan pertama?', 'Nama sekolah TK/PAUD?', 'Makanan favorit anak?', 'Nama kota kelahiran?'];
+export const PIN_Q = ['Nama hewan peliharaan?', 'Nama TK/PAUD?', 'Makanan favorit anak?', 'Kota kelahiran?'];
 export function requirePIN(then) {
   const p = state.profile;
   if (!p.pin) return then();
@@ -285,7 +285,7 @@ export function pinSetup() {
     left: state.profile.pin ? `<button type="button" class="btn btn-danger" data-act="pinRemove">Hapus PIN</button>` : '',
     body: `<p class="p muted">PIN dipakai orang tua atau guru untuk mengunci penghapusan data dan penggantian jenjang.</p>
 <div class="grid2">${field('PIN baru', 'pin', '', 'password', 'inputmode="numeric" maxlength="4" autocomplete="off" autofocus')}${field('Ulangi PIN', 'pin2', '', 'password', 'inputmode="numeric" maxlength="4" autocomplete="off"')}</div>
-${select('Pertanyaan pengaman', 'q', PIN_Q, state.profile.pinQ || PIN_Q[0])}
+${select('Pertanyaan pengaman', 'q', [...new Set([...PIN_Q, state.profile.pinQ].filter(Boolean))], state.profile.pinQ || PIN_Q[0])}
 ${field('Jawaban', 'a', '', 'text', 'autocomplete="off"')}`,
     onSubmit: (fd) => {
       const pin = fd.get('pin');
@@ -327,6 +327,7 @@ register({
     qaMode: (el) => { closeSheet(false); quickAdd(el.value); },
     qaDl: (el) => { const f = el.closest('form'); f.querySelector('#qaCustom').hidden = el.value !== 'custom'; },
     qaMapel: (el) => { const n = el.closest('form').querySelector('#qaNext'); if (n) n.textContent = nextLabel(el.value); },
+    pgJenis: (el) => { const b = el.closest('form').querySelector('#pgJam'); if (b) b.hidden = el.value !== 'pulang'; },
     kgUlang: (el) => { const f = el.closest('form'); f.querySelector('#kgHari').hidden = el.value !== 'mingguan'; f.querySelector('#kgTgl').hidden = el.value !== 'sekali'; CHANGE_KG(f); },
     kgCheck: (el) => CHANGE_KG(el.closest('form')),
   },

@@ -66,7 +66,11 @@ body.bare .fab{display:none}
 .grp{display:flex;align-items:center;gap:8px;margin-bottom:-8px;font-size:13px;font-weight:800}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .grid2.g21{grid-template-columns:2fr 1fr}
-.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:end}
+.grid2{align-items:end}
+.brkset{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.brkset>.label{font-size:14px}
+.brkset .field>label{font-size:12px;font-weight:600;color:var(--ink2)}
 
 /* ---------- cards & lists ---------- */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
@@ -106,10 +110,12 @@ body.bare .fab{display:none}
 /* ---------- chips & buttons ---------- */
 .chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .chip-gray{background:var(--surface2);color:var(--ink2)}
+.btn svg{flex-shrink:0}
 :root:not([data-theme="dark"]) .chip-gray{background:#F1F0F5;color:#46455A}
 .chip-onaccent{background:var(--now-2);color:#fff;background:rgba(255,255,255,.18)}
 .chip-btn{background:none;border:0;padding:0;cursor:pointer}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 20px;border-radius:15px;border:0;font-weight:700;font-size:15px;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn.wrap{white-space:normal;text-align:center;line-height:1.25;padding:8px 16px}
 .btn-primary{background:var(--accent);color:#fff}
 .btn-ghost{background:var(--accent-soft);color:var(--accent-ink)}
 .btn-line{background:var(--surface);color:var(--ink);border:1px solid var(--line2)}
@@ -128,10 +134,17 @@ body.bare .fab{display:none}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field>label,.label{font-size:13px;font-weight:700;color:var(--ink)}
 .input{height:50px;border:1px solid var(--line2);border-radius:13px;padding:0 14px;font-size:16px;background:var(--surface);color:var(--ink);width:100%;min-width:0}
+/* jam & tanggal: seragam di iOS/Android/desktop (iOS memberi lebar bawaan & teks di tengah) */
+.inwrap{position:relative;min-width:0;width:100%}
+input.input[type=time],input.input[type=date]{-webkit-appearance:none;appearance:none;display:block;position:relative;width:100%;max-width:100%;min-width:0;padding-right:38px;text-align:left;line-height:48px;font-variant-numeric:tabular-nums}
+input.input[type=time]::-webkit-date-and-time-value,input.input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+input.input[type=time]::-webkit-datetime-edit,input.input[type=date]::-webkit-datetime-edit{padding:0;line-height:48px}
+input.input[type=time]::-webkit-calendar-picker-indicator,input.input[type=date]::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:auto;height:auto;margin:0;padding:0;opacity:0;cursor:pointer}
+.in-ic{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;color:var(--ink2);pointer-events:none}
 .input.area{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
 .input::placeholder,.bare::placeholder{color:var(--ink3)}
 .bare{border:0;background:transparent;outline:0;font-size:16px;min-height:44px}
-select.input{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink2) 50%),linear-gradient(135deg,var(--ink2) 50%,transparent 50%);background-position:calc(100% - 20px) 22px,calc(100% - 15px) 22px;background-size:5px 5px;background-repeat:no-repeat;padding-right:36px}
+select.input{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink2) 50%),linear-gradient(135deg,var(--ink2) 50%,transparent 50%);background-position:calc(100% - 18px) 22px,calc(100% - 13px) 22px;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px;text-overflow:ellipsis}
 .search{display:flex;align-items:center;gap:10px;height:48px;border:1px solid var(--line2);border-radius:14px;padding:0 14px;background:var(--surface);color:var(--ink2)}
 .search input{border:0;outline:0;font-size:16px;flex-grow:1;background:transparent;color:var(--ink);min-width:0}
 .seg{display:grid;gap:4px;background:var(--seg);border-radius:14px;padding:4px}
@@ -274,7 +287,7 @@ body.mode-sd .now-title{font-size:32px}
 .ring{position:relative;width:260px;height:260px;align-self:center;margin-top:8px}
 .ring-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 .ring-t{font-size:54px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.play-btn{width:72px;height:72px;border-radius:24px;border:0;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.play-btn{flex-shrink:0;width:72px;height:72px;border-radius:24px;border:0;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 /* ---------- bantuan ---------- */
 .cat{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);font-size:14px;font-weight:600;color:var(--ink);text-decoration:none}
@@ -296,7 +309,7 @@ body.mode-sd .now-title{font-size:32px}
 /* ---------- onboarding ---------- */
 .ob{min-height:100vh;display:flex}
 .ob-brand{display:none}
-.ob-main{flex-grow:1;display:flex;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 20px 28px}
+.ob-main{flex-grow:1;min-width:0;display:flex;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 20px 28px}
 .ob-main.center{align-items:center}
 .ob-col{width:100%;max-width:560px;display:flex;flex-direction:column;gap:20px}
 .ob-col.welcome{gap:32px;padding-top:28px}
@@ -367,3 +380,5 @@ body.mode-sd .now-title{font-size:32px}
   .ob-main{padding:48px}
   #toast{bottom:32px}
 }
+
+#kgWarn:empty{display:none}

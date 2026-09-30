@@ -104,7 +104,7 @@ function jadwal() {
     `<div class="picks">${days.map((h) => `<label class="pick"><input type="radio" name="obd" value="${h}" ${h === obDay ? 'checked' : ''} data-chg="obDay"><span>${HARI[h].slice(0, 3)}</span></label>`).join('')}</div>
 ${L ? seg('obL', [['A', 'Minggu A'], ['B', 'Minggu B']], L, 'data-chg="obL"') : ''}
 <div class="col" style="gap:8px">${rows}</div>
-<button class="btn btn-line" type="button" data-act="obCopyDay">${ic('copy')}Salin dari hari sebelumnya</button>`,
+<button class="btn btn-line wrap" type="button" data-act="obCopyDay">${ic('copy')}Salin dari hari sebelumnya</button>`,
     '#/', 'Selesai', '#/mulai/mapel') };
 }
 

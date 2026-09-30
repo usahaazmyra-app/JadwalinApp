@@ -101,8 +101,8 @@ ${sect('Minggu berikutnya')}
 ${seg('pola', [['tetap', 'Tetap tiap minggu'], ['ab', 'Minggu A/B']], p.pola, 'data-chg="polaSet"')}
 ${body}
 ${sect('Jam pelajaran')}
-<form class="card" data-form="jamSet"><div class="grid2">${field('Jam masuk', 'jamMasuk', p.jamMasuk, 'time')}${field('Menit per jam', 'durasi', p.durasi, 'number', 'min="20" max="120"')}</div><div class="grid2">${field('Jam per hari', 'jamPerHari', p.jamPerHari, 'number', 'min="1" max="14"')}<div class="field"><label for="f-hs">Hari sekolah</label><select id="f-hs" class="input" name="hariSekolah"><option value="5" ${p.hariSekolah === 5 ? 'selected' : ''}>Senin–Jumat</option><option value="6" ${p.hariSekolah === 6 ? 'selected' : ''}>Senin–Sabtu</option></select></div></div>
-${(p.breaks || []).map((b, i) => `<div class="grid3">${field(`Istirahat ${i + 1}`, `bl${i}`, b.label)}${field('Setelah jam ke-', `ba${i}`, b.after, 'number', 'min="1" max="14"')}${field('Menit', `bd${i}`, b.durasi, 'number', 'min="5" max="90"')}</div>`).join('')}
+<form class="card" data-form="jamSet"><div class="grid2">${field('Jam masuk', 'jamMasuk', p.jamMasuk, 'time')}${field('Menit per jam', 'durasi', p.durasi, 'number', 'min="20" max="120"')}</div><div class="grid2">${field('Jam per hari', 'jamPerHari', p.jamPerHari, 'number', 'min="1" max="14"')}<div class="field"><label for="f-hs">Hari sekolah</label><select id="f-hs" class="input" name="hariSekolah"><option value="5" ${p.hariSekolah === 5 ? 'selected' : ''}>Sen–Jum</option><option value="6" ${p.hariSekolah === 6 ? 'selected' : ''}>Sen–Sab</option></select></div></div>
+${(p.breaks || []).map((b, i) => `<div class="brkset"><span class="label">Istirahat ${i + 1}</span><div class="grid3">${field('Nama', `bl${i}`, b.label)}${field('Setelah jam', `ba${i}`, b.after, 'number', 'min="1" max="14" inputmode="numeric"')}${field('Menit', `bd${i}`, b.durasi, 'number', 'min="5" max="90" inputmode="numeric"')}</div></div>`).join('')}
 <button class="btn btn-primary" type="submit">Simpan jam pelajaran</button></form></div>`,
   };
 }

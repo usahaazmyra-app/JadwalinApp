@@ -101,8 +101,8 @@ function ujian() {
   const next = up[0];
   const allMat = up.flatMap((u) => u.materi || []);
   const byDay = new Map(); for (const u of up) { if (!byDay.has(u.tanggal)) byDay.set(u.tanggal, []); byDay.get(u.tanggal).push(u); }
-  const card = (u) => { const m = u.materi || []; const dn = m.filter((x) => x.done).length; return `<div class="card" style="gap:10px"><div class="row" style="justify-content:space-between">${mchip(mapelById(u.mapelId))}<span class="row" style="gap:6px"><span class="small muted">${jam(u.mulai)}${u.selesai ? '–' + jam(u.selesai) : ''}${u.ruang ? ' · ' + esc(u.ruang) : ''}</span><button type="button" class="icon-btn sm" data-act="ujEdit" data-id="${u.id}" aria-label="Ubah ujian">${ic('edit', 16)}</button></span></div>
-<b>${esc(u.jenis || 'Ujian')}${u.nama ? ' · ' + esc(u.nama) : ''}</b>
+  const card = (u) => { const m = u.materi || []; const dn = m.filter((x) => x.done).length; return `<div class="card" style="gap:10px"><div class="row" style="justify-content:space-between">${mchip(mapelById(u.mapelId))}<button type="button" class="icon-btn sm" data-act="ujEdit" data-id="${u.id}" aria-label="Ubah ujian" style="margin:-8px 0">${ic('edit', 16)}</button></div>
+<div class="col" style="gap:4px"><b>${esc(u.jenis || 'Ujian')}${u.nama ? ' · ' + esc(u.nama) : ''}</b><span class="small muted row" style="gap:6px;align-items:flex-start">${ic('clock', 15)}<span>${jam(u.mulai)}${u.selesai ? '–' + jam(u.selesai) : ''}${u.ruang ? ' · ' + esc(u.ruang) : ''}</span></span></div>
 ${m.length ? `<div class="col" style="gap:0">${m.map((x) => `<label class="checkrow tight"><input type="checkbox" class="check" data-chg="matToggle" data-u="${u.id}" data-id="${x.id}" ${x.done ? 'checked' : ''}><span class="${x.done ? 'struck' : ''}">${esc(x.teks)}</span></label>`).join('')}</div><div class="row" style="gap:10px"><div class="bar grow"><span style="width:${Math.round((dn / m.length) * 100)}%"></span></div><span class="small muted">${dn}/${m.length} materi</span></div>` : '<span class="small muted">Belum ada daftar materi.</span>'}</div>`; };
   const nd = next ? daysBetween(today(), parseISO(next.tanggal)) : 0;
   return {
